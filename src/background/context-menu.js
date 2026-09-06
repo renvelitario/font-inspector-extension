@@ -37,7 +37,7 @@ async function injectInspector(tabId) {
       target: { tabId },
       files: [
         "src/utils/typography.js",
-        "src/content/modal.js",
+        "src/content/window.js",
         "src/content/inspector.js"
       ]
     });

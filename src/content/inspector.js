@@ -5,6 +5,6 @@
     }
 
     const inspection = window.FontInspectorTypography.inspectSelection();
-    window.FontInspectorModal.showModal(inspection);
+    window.FontInspectorWindow.showWindow(inspection);
   });
 })();

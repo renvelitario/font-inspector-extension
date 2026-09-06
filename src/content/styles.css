@@ -13,13 +13,16 @@
   position: fixed;
   inset: 0;
   z-index: 2147483647;
-  display: grid;
-  place-items: start end;
+  display: block;
   padding: 18px;
-  background: rgba(17, 24, 39, 0.28);
+  background: transparent;
+  pointer-events: none;
 }
 
-.font-inspector-extension__dialog {
+.font-inspector-extension__window {
+  position: fixed;
+  top: 18px;
+  right: 18px;
   width: min(440px, calc(100vw - 32px));
   max-height: min(720px, calc(100vh - 32px));
   overflow: auto;
@@ -28,6 +31,12 @@
   background: #fbfbfc;
   box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18), 0 1px 2px rgba(15, 23, 42, 0.08);
   color: #1f2328;
+  pointer-events: auto;
+}
+
+.font-inspector-extension__window--dragging {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .font-inspector-extension__header {
@@ -38,6 +47,9 @@
   padding: 14px 16px 12px;
   border-bottom: 1px solid #e3e5e8;
   background: #ffffff;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
 }
 
 .font-inspector-extension__eyebrow,
@@ -122,7 +134,15 @@
 }
 
 .font-inspector-extension__panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.font-inspector-extension__panel-title {
   display: grid;
+  min-width: 0;
   gap: 4px;
 }
 
@@ -198,7 +218,9 @@
 .font-inspector-extension__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
+  flex: 0 0 auto;
   padding-top: 0;
 }
 
@@ -215,6 +237,46 @@
   line-height: 1.2;
 }
 
+.font-inspector-extension__copy-button {
+  display: inline-grid;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  place-items: center;
+  padding: 0;
+  color: #4b5563;
+}
+
+.font-inspector-extension__copy-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  background: currentColor;
+  mask: var(--font-inspector-copy-icon) center / contain no-repeat;
+  -webkit-mask: var(--font-inspector-copy-icon) center / contain no-repeat;
+}
+
+.font-inspector-extension__copy-button--copied {
+  border-color: #8bb597;
+  background: #f3faf5;
+  color: #23733b;
+}
+
+.font-inspector-extension__copy-button--failed {
+  border-color: #d99a9a;
+  background: #fff6f6;
+  color: #a33b3b;
+}
+
+.font-inspector-extension__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .font-inspector-extension__button:hover {
   background: #f4f5f7;
   border-color: #aeb4be;
@@ -229,13 +291,15 @@
 
 @media (max-width: 520px) {
   .font-inspector-extension__overlay {
-    align-items: end;
-    justify-items: center;
     padding: 10px;
   }
 
-  .font-inspector-extension__dialog {
-    width: 100%;
+  .font-inspector-extension__window {
+    top: auto;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    width: auto;
     max-height: calc(100vh - 20px);
     border-radius: 10px;
   }
@@ -249,5 +313,14 @@
   .font-inspector-extension__property-list {
     grid-template-columns: 1fr;
     gap: 3px;
+  }
+
+  .font-inspector-extension__panel-header {
+    display: grid;
+    gap: 8px;
+  }
+
+  .font-inspector-extension__actions {
+    justify-content: flex-start;
   }
 }

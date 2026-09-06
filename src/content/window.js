@@ -1,45 +1,54 @@
 (() => {
   const ROOT_ID = "font-inspector-extension-root";
   const namespace = "font-inspector-extension";
+  let outsideClickHandler = null;
 
-  function removeModal() {
+  function removeWindow() {
     const existingRoot = document.getElementById(ROOT_ID);
     if (existingRoot) {
       existingRoot.remove();
     }
 
     document.removeEventListener("keydown", handleEscape, true);
+    if (outsideClickHandler) {
+      document.removeEventListener("pointerdown", outsideClickHandler, true);
+      outsideClickHandler = null;
+    }
   }
 
   function handleEscape(event) {
     if (event.key === "Escape") {
-      removeModal();
+      removeWindow();
     }
   }
 
-  function showModal(inspection) {
-    removeModal();
+  function showWindow(inspection) {
+    removeWindow();
 
     const root = document.createElement("div");
     root.id = ROOT_ID;
     root.className = `${namespace}__overlay`;
-    root.addEventListener("click", (event) => {
-      if (event.target === root) {
-        removeModal();
-      }
-    });
 
-    const dialog = document.createElement("section");
-    dialog.className = `${namespace}__dialog`;
-    dialog.setAttribute("role", "dialog");
-    dialog.setAttribute("aria-modal", "true");
-    dialog.setAttribute("aria-labelledby", `${namespace}-title`);
+    const inspectorWindow = document.createElement("section");
+    inspectorWindow.className = `${namespace}__window`;
+    inspectorWindow.setAttribute("role", "dialog");
+    inspectorWindow.setAttribute("aria-labelledby", `${namespace}-title`);
 
-    dialog.append(createHeader(), createBody(inspection));
-    root.append(dialog);
+    inspectorWindow.append(createHeader(), createBody(inspection));
+    root.append(inspectorWindow);
     document.documentElement.append(root);
 
+    makeDraggable(inspectorWindow, inspectorWindow.querySelector(`.${namespace}__header`));
+    outsideClickHandler = (event) => {
+      if (!inspectorWindow.contains(event.target)) {
+        removeWindow();
+      }
+    };
+
     document.addEventListener("keydown", handleEscape, true);
+    window.setTimeout(() => {
+      document.addEventListener("pointerdown", outsideClickHandler, true);
+    }, 0);
   }
 
   function createHeader() {
@@ -63,7 +72,7 @@
     closeButton.className = `${namespace}__icon-button`;
     closeButton.setAttribute("aria-label", "Close Font Inspector");
     closeButton.textContent = "x";
-    closeButton.addEventListener("click", removeModal);
+    closeButton.addEventListener("click", removeWindow);
 
     header.append(titleWrap, closeButton);
     return header;
@@ -107,6 +116,9 @@
     const panelHeader = document.createElement("div");
     panelHeader.className = `${namespace}__panel-header`;
 
+    const titleWrap = document.createElement("div");
+    titleWrap.className = `${namespace}__panel-title`;
+
     const title = document.createElement("h3");
     title.textContent = totalStyles > 1
       ? `Style ${index + 1} / ${styleInfo.elementName}`
@@ -115,7 +127,8 @@
     const sample = document.createElement("p");
     sample.textContent = styleInfo.sampleText ? `"${styleInfo.sampleText}"` : styleInfo.elementName;
 
-    panelHeader.append(title, sample);
+    titleWrap.append(title, sample);
+    panelHeader.append(titleWrap, createActions(styleInfo.typography));
     panel.append(panelHeader);
 
     const sections = [
@@ -128,7 +141,6 @@
       panel.append(createPropertySection(sectionTitle, properties, styleInfo.typography));
     });
 
-    panel.append(createActions(styleInfo.typography));
     return panel;
   }
 
@@ -184,18 +196,91 @@
   function createCopyButton(label, value) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `${namespace}__button`;
-    button.textContent = label;
+    button.className = `${namespace}__button ${namespace}__copy-button`;
+    button.title = label;
+    button.setAttribute("aria-label", label);
+
+    const icon = document.createElement("span");
+    icon.className = `${namespace}__copy-icon`;
+    icon.style.setProperty("--font-inspector-copy-icon", `url("${chrome.runtime.getURL("src/icons/copy.svg")}")`);
+    icon.setAttribute("aria-hidden", "true");
+
+    const accessibleLabel = document.createElement("span");
+    accessibleLabel.className = `${namespace}__sr-only`;
+    accessibleLabel.textContent = label;
+
+    button.append(icon, accessibleLabel);
     button.addEventListener("click", async () => {
       const copied = await writeClipboard(value);
-      const originalText = button.textContent;
-      button.textContent = copied ? "Copied" : "Copy failed";
+      const originalTitle = button.title;
+      button.title = copied ? `${label} copied` : `${label} failed`;
+      button.classList.toggle(`${namespace}__copy-button--copied`, copied);
+      button.classList.toggle(`${namespace}__copy-button--failed`, !copied);
+
       window.setTimeout(() => {
-        button.textContent = originalText;
+        button.title = originalTitle;
+        button.classList.remove(`${namespace}__copy-button--copied`, `${namespace}__copy-button--failed`);
       }, 1100);
     });
 
     return button;
+  }
+
+  function makeDraggable(inspectorWindow, handle) {
+    let dragState = null;
+
+    handle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || event.target.closest("button")) {
+        return;
+      }
+
+      const rect = inspectorWindow.getBoundingClientRect();
+      dragState = {
+        pointerId: event.pointerId,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top
+      };
+
+      inspectorWindow.classList.add(`${namespace}__window--dragging`);
+      inspectorWindow.style.left = `${rect.left}px`;
+      inspectorWindow.style.top = `${rect.top}px`;
+      inspectorWindow.style.right = "auto";
+      inspectorWindow.style.bottom = "auto";
+      inspectorWindow.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    inspectorWindow.addEventListener("pointermove", (event) => {
+      if (!dragState || event.pointerId !== dragState.pointerId) {
+        return;
+      }
+
+      const rect = inspectorWindow.getBoundingClientRect();
+      const maxLeft = Math.max(8, window.innerWidth - rect.width - 8);
+      const maxTop = Math.max(8, window.innerHeight - rect.height - 8);
+      const nextLeft = clamp(event.clientX - dragState.offsetX, 8, maxLeft);
+      const nextTop = clamp(event.clientY - dragState.offsetY, 8, maxTop);
+
+      inspectorWindow.style.left = `${nextLeft}px`;
+      inspectorWindow.style.top = `${nextTop}px`;
+    });
+
+    inspectorWindow.addEventListener("pointerup", endDrag);
+    inspectorWindow.addEventListener("pointercancel", endDrag);
+
+    function endDrag(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) {
+        return;
+      }
+
+      inspectorWindow.classList.remove(`${namespace}__window--dragging`);
+      inspectorWindow.releasePointerCapture(event.pointerId);
+      dragState = null;
+    }
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
   }
 
   async function writeClipboard(value) {
@@ -224,8 +309,8 @@
     }
   }
 
-  window.FontInspectorModal = {
-    showModal,
-    removeModal
+  window.FontInspectorWindow = {
+    showWindow,
+    removeWindow
   };
 })();

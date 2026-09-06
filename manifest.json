@@ -12,11 +12,17 @@
       "matches": ["<all_urls>"],
       "js": [
         "src/utils/typography.js",
-        "src/content/modal.js",
+        "src/content/window.js",
         "src/content/inspector.js"
       ],
       "css": ["src/content/styles.css"],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/icons/copy.svg"],
+      "matches": ["<all_urls>"]
     }
   ]
 }
