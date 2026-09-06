@@ -1,6 +1,6 @@
 :root {
   color-scheme: light dark;
-  font-family: Helvetica, Arial, sans-serif;
+  font-family: Archivo, Arial, sans-serif;
   color: var(--text-primary);
   background: var(--bg-canvas);
   font-size: 13px;
@@ -627,8 +627,8 @@ body.theme-dark {
 
 .font-inspector-popup__header {
   gap: 12px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .font-inspector-popup__header-title-wrap {
@@ -652,8 +652,8 @@ body.theme-dark {
 
 .font-inspector-popup__header h1 {
   font-size: 20px;
-  font-weight: 850;
-  letter-spacing: 0.025em;
+  font-weight: 750;
+  letter-spacing: 0;
 }
 
 .font-inspector-popup__header p {
@@ -678,20 +678,20 @@ body.theme-dark {
   width: 100%;
   min-height: 46px;
   padding: 11px 16px 12px;
-  border: 1px solid color-mix(in srgb, var(--accent-primary) 70%, var(--border-color));
+  border: 1px solid var(--accent-primary);
   border-radius: 8px;
-  background: var(--accent-light);
-  color: var(--text-primary);
+  background: var(--accent-primary);
+  color: #ffffff;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.2;
   transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 
 .font-inspector-popup__primary-button:hover {
-  border-color: var(--accent-primary);
-  background: color-mix(in srgb, var(--accent-light) 72%, var(--accent-primary));
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
 }
 
 .font-inspector-popup__primary-button:active {
@@ -706,10 +706,39 @@ body.theme-dark {
 .font-inspector-popup__primary-button-icon {
   width: 22px;
   height: 22px;
-  filter: var(--icon-filter-hover);
+  filter: brightness(0) invert(1);
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.font-inspector-popup__header-divider {
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+.font-inspector-popup__saved-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.font-inspector-popup__saved-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.font-inspector-popup__saved-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 .font-inspector-popup__body {

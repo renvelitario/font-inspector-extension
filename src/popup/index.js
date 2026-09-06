@@ -144,19 +144,12 @@
     titleText.className = `${namespace}__header-title-text`;
 
     const title = document.createElement("h1");
-    title.textContent = "FONT INSPECTOR";
+    title.textContent = "Font Inspector";
 
-    const countText = document.createElement("p");
-    if (currentSearchQuery.trim()) {
-      countText.textContent = `SAVED FONTS / ${count} OF ${totalCount}`;
-    } else {
-      countText.textContent = totalCount === 1 ? "SAVED FONTS / 1 STYLE" : `SAVED FONTS / ${totalCount} STYLES`;
-    }
-
-    titleText.append(title, countText);
+    titleText.append(title);
     titleWrap.append(logo, titleText);
     top.append(titleWrap, createThemeToggleButton());
-    header.append(top, createInspectButton());
+    header.append(top, createInspectButton(), createHeaderDivider(), createSavedFontsHeader(count, totalCount));
 
     if (totalCount > 0) {
       const searchWrap = document.createElement("div");
@@ -190,6 +183,31 @@
     }
 
     return header;
+  }
+
+  function createSavedFontsHeader(count, totalCount) {
+    const sectionHeader = document.createElement("div");
+    sectionHeader.className = `${namespace}__saved-header`;
+
+    const heading = document.createElement("h2");
+    heading.textContent = "Saved Fonts";
+
+    const countText = document.createElement("p");
+    if (currentSearchQuery.trim()) {
+      countText.textContent = `${count} of ${totalCount}`;
+    } else {
+      countText.textContent = totalCount === 1 ? "1 font" : `${totalCount} fonts`;
+    }
+
+    sectionHeader.append(heading, countText);
+    return sectionHeader;
+  }
+
+  function createHeaderDivider() {
+    const divider = document.createElement("div");
+    divider.className = `${namespace}__header-divider`;
+    divider.setAttribute("aria-hidden", "true");
+    return divider;
   }
 
   function createThemeToggleButton() {

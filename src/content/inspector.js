@@ -43,7 +43,7 @@
     label.style.borderRadius = "6px";
     label.style.background = "#0f172a";
     label.style.color = "#f8fafc";
-    label.style.font = "12px Helvetica, Arial, sans-serif";
+    label.style.font = "12px Archivo, Arial, sans-serif";
     label.style.lineHeight = "1.2";
     label.style.display = "none";
 
