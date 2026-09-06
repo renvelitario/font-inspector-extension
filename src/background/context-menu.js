@@ -16,7 +16,13 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
   const inspection = await inspectTabSelection(tab.id);
   if (inspection) {
-    await openInspectorWindow(inspection);
+    await openInspectorWindow({
+      ...inspection,
+      source: {
+        title: tab.title || "",
+        url: tab.url || ""
+      }
+    });
   }
 });
 
@@ -69,7 +75,7 @@ async function openInspectorWindow(inspection) {
   await chrome.windows.create({
     url: chrome.runtime.getURL("src/window/inspector.html"),
     type: "popup",
-    width: 460,
+    width: 480,
     height: 640,
     focused: true
   });

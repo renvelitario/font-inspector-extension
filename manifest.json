@@ -4,6 +4,11 @@
   "description": "Inspect rendered typography from selected webpage text.",
   "version": "1.0.0",
   "permissions": ["contextMenus", "activeTab", "scripting", "storage"],
+  "action": {
+    "default_title": "Font Inspector",
+    "default_popup": "src/popup/index.html"
+  },
+  "options_page": "src/popup/index.html",
   "background": {
     "service_worker": "src/background/context-menu.js"
   },
