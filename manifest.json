@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Font Inspector",
+  "description": "Inspect rendered typography from selected webpage text.",
+  "version": "1.0.0",
+  "permissions": ["contextMenus", "activeTab", "scripting"],
+  "background": {
+    "service_worker": "src/background/context-menu.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "src/utils/typography.js",
+        "src/content/modal.js",
+        "src/content/inspector.js"
+      ],
+      "css": ["src/content/styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
