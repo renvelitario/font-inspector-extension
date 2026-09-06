@@ -176,7 +176,7 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
     button.click();
     await new Promise(resolve => setTimeout(resolve, 0));
     return window.copiedValues.at(-1);
-  })()`), 'font-family: Arial, Helvetica, sans-serif;\\nfont-size: 16px;\\nfont-weight: 400;\\nfont-style: normal;\\nline-height: 24px;\\nletter-spacing: 0px;\\ncolor: #242628;\\ntext-align: left;\\ntext-transform: none;\\ntext-decoration: none;\\nbackground-color: transparent;');
+  })()`), 'font-family: Arial, Helvetica, sans-serif;\nfont-size: 16px;\nfont-weight: 400;\nfont-style: normal;\nline-height: 24px;\nletter-spacing: 0px;\ncolor: #242628;\ntext-align: left;\ntext-transform: none;\ntext-decoration: none;\nbackground-color: transparent;');
   assert.equal(await evaluate(`window.createdWindows.length`), 0);
   assert.deepEqual(await evaluate(`(async () => {
     document.querySelector('.font-inspector-popup__card').click();

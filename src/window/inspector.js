@@ -42,11 +42,14 @@
   function applyTheme(theme) {
     currentTheme = theme || "system";
     document.body.classList.remove("theme-light", "theme-dark");
+    document.documentElement.classList.remove("theme-light", "theme-dark");
 
     if (currentTheme === "light") {
       document.body.classList.add("theme-light");
+      document.documentElement.classList.add("theme-light");
     } else if (currentTheme === "dark") {
       document.body.classList.add("theme-dark");
+      document.documentElement.classList.add("theme-dark");
     }
   }
 
