@@ -3,7 +3,7 @@
   "name": "Font Inspector",
   "description": "Inspect rendered typography from selected webpage text.",
   "version": "1.0.0",
-  "permissions": ["contextMenus", "activeTab", "scripting"],
+  "permissions": ["contextMenus", "activeTab", "scripting", "storage"],
   "background": {
     "service_worker": "src/background/context-menu.js"
   },
@@ -12,17 +12,9 @@
       "matches": ["<all_urls>"],
       "js": [
         "src/utils/typography.js",
-        "src/content/window.js",
         "src/content/inspector.js"
       ],
-      "css": ["src/content/styles.css"],
       "run_at": "document_idle"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": ["src/icons/copy.svg"],
-      "matches": ["<all_urls>"]
     }
   ]
 }

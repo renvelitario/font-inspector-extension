@@ -1,4 +1,5 @@
 const MENU_ID = "font-inspector-selection";
+const INSPECTION_STORAGE_KEY = "fontInspectorLatestInspection";
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -8,42 +9,68 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== MENU_ID || !tab?.id) {
     return;
   }
 
-  inspectTabSelection(tab.id);
+  const inspection = await inspectTabSelection(tab.id);
+  if (inspection) {
+    await openInspectorWindow(inspection);
+  }
 });
 
-function inspectTabSelection(tabId) {
-  chrome.tabs.sendMessage(tabId, { type: "FONT_INSPECTOR_INSPECT_SELECTION" }, () => {
-    if (!chrome.runtime.lastError) {
-      return;
-    }
-
-    injectInspector(tabId);
-  });
+async function inspectTabSelection(tabId) {
+  try {
+    return await sendInspectionMessage(tabId);
+  } catch (error) {
+    return injectInspector(tabId);
+  }
 }
 
 async function injectInspector(tabId) {
   try {
-    await chrome.scripting.insertCSS({
-      target: { tabId },
-      files: ["src/content/styles.css"]
-    });
-
     await chrome.scripting.executeScript({
       target: { tabId },
       files: [
         "src/utils/typography.js",
-        "src/content/window.js",
         "src/content/inspector.js"
       ]
     });
 
-    chrome.tabs.sendMessage(tabId, { type: "FONT_INSPECTOR_INSPECT_SELECTION" });
+    return await sendInspectionMessage(tabId);
   } catch (error) {
     console.warn("Font Inspector could not run on this page.", error);
+    return {
+      ok: false,
+      reason: "Font Inspector could not run on this page."
+    };
   }
+}
+
+function sendInspectionMessage(tabId) {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(tabId, { type: "FONT_INSPECTOR_INSPECT_SELECTION" }, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+
+      resolve(response);
+    });
+  });
+}
+
+async function openInspectorWindow(inspection) {
+  await chrome.storage.session.set({
+    [INSPECTION_STORAGE_KEY]: inspection
+  });
+
+  await chrome.windows.create({
+    url: chrome.runtime.getURL("src/window/inspector.html"),
+    type: "popup",
+    width: 460,
+    height: 640,
+    focused: true
+  });
 }

@@ -1,54 +1,22 @@
 (() => {
-  const ROOT_ID = "font-inspector-extension-root";
-  const namespace = "font-inspector-extension";
-  let outsideClickHandler = null;
+  const STORAGE_KEY = "fontInspectorLatestInspection";
+  const namespace = "font-inspector-window";
+  const root = document.getElementById("font-inspector-window-root");
 
-  function removeWindow() {
-    const existingRoot = document.getElementById(ROOT_ID);
-    if (existingRoot) {
-      existingRoot.remove();
-    }
+  document.addEventListener("DOMContentLoaded", renderStoredInspection);
 
-    document.removeEventListener("keydown", handleEscape, true);
-    if (outsideClickHandler) {
-      document.removeEventListener("pointerdown", outsideClickHandler, true);
-      outsideClickHandler = null;
-    }
-  }
-
-  function handleEscape(event) {
-    if (event.key === "Escape") {
-      removeWindow();
-    }
-  }
-
-  function showWindow(inspection) {
-    removeWindow();
-
-    const root = document.createElement("div");
-    root.id = ROOT_ID;
-    root.className = `${namespace}__overlay`;
-
-    const inspectorWindow = document.createElement("section");
-    inspectorWindow.className = `${namespace}__window`;
-    inspectorWindow.setAttribute("role", "dialog");
-    inspectorWindow.setAttribute("aria-labelledby", `${namespace}-title`);
-
-    inspectorWindow.append(createHeader(), createBody(inspection));
-    root.append(inspectorWindow);
-    document.documentElement.append(root);
-
-    makeDraggable(inspectorWindow, inspectorWindow.querySelector(`.${namespace}__header`));
-    outsideClickHandler = (event) => {
-      if (!inspectorWindow.contains(event.target)) {
-        removeWindow();
-      }
+  async function renderStoredInspection() {
+    const result = await chrome.storage.session.get(STORAGE_KEY);
+    const inspection = result[STORAGE_KEY] || {
+      ok: false,
+      reason: "No typography inspection data was found."
     };
 
-    document.addEventListener("keydown", handleEscape, true);
-    window.setTimeout(() => {
-      document.addEventListener("pointerdown", outsideClickHandler, true);
-    }, 0);
+    render(inspection);
+  }
+
+  function render(inspection) {
+    root.replaceChildren(createHeader(), createBody(inspection));
   }
 
   function createHeader() {
@@ -61,20 +29,12 @@
     eyebrow.className = `${namespace}__eyebrow`;
     eyebrow.textContent = "Font Inspector";
 
-    const title = document.createElement("h2");
-    title.id = `${namespace}-title`;
+    const title = document.createElement("h1");
     title.textContent = "Rendered typography";
 
     titleWrap.append(eyebrow, title);
+    header.append(titleWrap);
 
-    const closeButton = document.createElement("button");
-    closeButton.type = "button";
-    closeButton.className = `${namespace}__icon-button`;
-    closeButton.setAttribute("aria-label", "Close Font Inspector");
-    closeButton.textContent = "x";
-    closeButton.addEventListener("click", removeWindow);
-
-    header.append(titleWrap, closeButton);
     return header;
   }
 
@@ -119,7 +79,7 @@
     const titleWrap = document.createElement("div");
     titleWrap.className = `${namespace}__panel-title`;
 
-    const title = document.createElement("h3");
+    const title = document.createElement("h2");
     title.textContent = totalStyles > 1
       ? `Style ${index + 1} / ${styleInfo.elementName}`
       : "Typography";
@@ -148,7 +108,7 @@
     const section = document.createElement("section");
     section.className = `${namespace}__section`;
 
-    const heading = document.createElement("h4");
+    const heading = document.createElement("h3");
     heading.textContent = title;
     section.append(heading);
 
@@ -196,13 +156,12 @@
   function createCopyButton(label, value) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `${namespace}__button ${namespace}__copy-button`;
+    button.className = `${namespace}__copy-button`;
     button.title = label;
     button.setAttribute("aria-label", label);
 
     const icon = document.createElement("span");
     icon.className = `${namespace}__copy-icon`;
-    icon.style.setProperty("--font-inspector-copy-icon", `url("${chrome.runtime.getURL("src/icons/copy.svg")}")`);
     icon.setAttribute("aria-hidden", "true");
 
     const accessibleLabel = document.createElement("span");
@@ -224,63 +183,6 @@
     });
 
     return button;
-  }
-
-  function makeDraggable(inspectorWindow, handle) {
-    let dragState = null;
-
-    handle.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0 || event.target.closest("button")) {
-        return;
-      }
-
-      const rect = inspectorWindow.getBoundingClientRect();
-      dragState = {
-        pointerId: event.pointerId,
-        offsetX: event.clientX - rect.left,
-        offsetY: event.clientY - rect.top
-      };
-
-      inspectorWindow.classList.add(`${namespace}__window--dragging`);
-      inspectorWindow.style.left = `${rect.left}px`;
-      inspectorWindow.style.top = `${rect.top}px`;
-      inspectorWindow.style.right = "auto";
-      inspectorWindow.style.bottom = "auto";
-      inspectorWindow.setPointerCapture(event.pointerId);
-      event.preventDefault();
-    });
-
-    inspectorWindow.addEventListener("pointermove", (event) => {
-      if (!dragState || event.pointerId !== dragState.pointerId) {
-        return;
-      }
-
-      const rect = inspectorWindow.getBoundingClientRect();
-      const maxLeft = Math.max(8, window.innerWidth - rect.width - 8);
-      const maxTop = Math.max(8, window.innerHeight - rect.height - 8);
-      const nextLeft = clamp(event.clientX - dragState.offsetX, 8, maxLeft);
-      const nextTop = clamp(event.clientY - dragState.offsetY, 8, maxTop);
-
-      inspectorWindow.style.left = `${nextLeft}px`;
-      inspectorWindow.style.top = `${nextTop}px`;
-    });
-
-    inspectorWindow.addEventListener("pointerup", endDrag);
-    inspectorWindow.addEventListener("pointercancel", endDrag);
-
-    function endDrag(event) {
-      if (!dragState || event.pointerId !== dragState.pointerId) {
-        return;
-      }
-
-      inspectorWindow.classList.remove(`${namespace}__window--dragging`);
-      inspectorWindow.releasePointerCapture(event.pointerId);
-      dragState = null;
-    }
-  }
-
-  function clamp(value, min, max) {
-    return Math.min(Math.max(value, min), max);
   }
 
   async function writeClipboard(value) {
@@ -308,9 +210,4 @@
       textarea.remove();
     }
   }
-
-  window.FontInspectorWindow = {
-    showWindow,
-    removeWindow
-  };
 })();

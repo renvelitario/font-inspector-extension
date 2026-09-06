@@ -14,7 +14,7 @@ Font Inspector is a local Chrome Extension using Manifest V3. It inspects the re
 1. Highlight text on any regular webpage.
 2. Right-click the selection.
 3. Choose **Font Inspector**.
-4. Review the floating inspector window and use the copy icons for font, color, or CSS.
+4. Review the separate inspector popup window and use the copy icons for font, color, or CSS.
 
 Selections that span multiple elements with different rendered typography are reported as multiple detected styles.
 
@@ -27,8 +27,10 @@ src/
     context-menu.js
   content/
     inspector.js
-    window.js
-    styles.css
+  window/
+    inspector.html
+    inspector.js
+    inspector.css
   icons/
     copy.svg
   utils/
