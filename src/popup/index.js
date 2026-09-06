@@ -1,5 +1,6 @@
 (() => {
   const STORAGE_KEY = "fontInspectorSavedFonts";
+  const INSPECTION_STORAGE_KEY = "fontInspectorLatestInspection";
   const THEME_STORAGE_KEY = "fontInspectorTheme";
   const namespace = "font-inspector-popup";
   const root = document.getElementById("font-inspector-popup-root");
@@ -7,17 +8,6 @@
   let currentSearchQuery = "";
   let currentTheme = "system";
   let toastTimer = null;
-
-  const SECTION_ICONS = {
-    Type: "../icons/Font.svg",
-    Color: "../icons/Color.svg",
-    Text: "../icons/Format.svg"
-  };
-  const SECTIONS = [
-    ["Type", ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing"]],
-    ["Color", ["color", "backgroundColor"]],
-    ["Text", ["textAlign", "textTransform", "textDecorationLine"]]
-  ];
 
   document.addEventListener("DOMContentLoaded", () => {
     initTheme();
@@ -243,6 +233,24 @@
   function createSavedFontCard(savedFont, index) {
     const card = document.createElement("article");
     card.className = `${namespace}__card`;
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `Open ${savedFont.name || `Saved Font ${index + 1}`} details`);
+
+    card.addEventListener("click", () => {
+      openSavedFontWindow(savedFont, index);
+    });
+
+    card.addEventListener("keydown", (event) => {
+      if (event.target !== card) {
+        return;
+      }
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openSavedFontWindow(savedFont, index);
+      }
+    });
 
     const header = document.createElement("div");
     header.className = `${namespace}__card-header`;
@@ -280,21 +288,49 @@
     header.append(titleWrap, actions);
     card.append(header);
 
+    card.append(createSavedFontSummary(savedFont));
+    return card;
+  }
+
+  function createSavedFontSummary(savedFont) {
+    const summary = document.createElement("div");
+    summary.className = `${namespace}__summary`;
+
     if (savedFont.sampleText) {
-      const sample = document.createElement("blockquote");
-      sample.className = `${namespace}__sample`;
-      sample.textContent = `"${savedFont.sampleText}"`;
+      const preview = document.createElement("p");
+      preview.className = `${namespace}__summary-sample`;
+      preview.textContent = savedFont.sampleText;
       if (savedFont.typography?.fontFamily) {
-        sample.style.fontFamily = savedFont.typography.fontFamily;
+        preview.style.fontFamily = savedFont.typography.fontFamily;
       }
-      card.append(sample);
+      summary.append(preview);
     }
 
-    SECTIONS.forEach(([sectionTitle, properties]) => {
-      card.append(createPropertySection(sectionTitle, properties, savedFont.typography || {}));
+    const facts = document.createElement("div");
+    facts.className = `${namespace}__summary-facts`;
+
+    [
+      savedFont.typography?.fontSize,
+      savedFont.typography?.fontWeight && `Weight ${savedFont.typography.fontWeight}`,
+      savedFont.typography?.lineHeight && `Line ${savedFont.typography.lineHeight}`
+    ].filter(Boolean).forEach((fact) => {
+      const chip = document.createElement("span");
+      chip.textContent = fact;
+      facts.append(chip);
     });
 
-    return card;
+    if (savedFont.typography?.color) {
+      const colorChip = document.createElement("span");
+      colorChip.className = `${namespace}__summary-color`;
+      colorChip.append(createColorSwatch(savedFont.typography.color), document.createTextNode(savedFont.typography.color));
+      facts.append(colorChip);
+    }
+
+    if (facts.childElementCount > 0) {
+      summary.append(facts);
+    }
+
+    return summary;
   }
 
   function getSavedFontMeta(savedFont) {
@@ -338,53 +374,6 @@
     }).format(date);
   }
 
-  function createPropertySection(title, properties, typography) {
-    const section = document.createElement("section");
-    section.className = `${namespace}__section`;
-
-    const heading = document.createElement("h3");
-    const icon = document.createElement("img");
-    icon.className = `${namespace}__section-icon`;
-    icon.src = SECTION_ICONS[title];
-    icon.alt = "";
-    icon.draggable = false;
-    icon.setAttribute("aria-hidden", "true");
-
-    const headingText = document.createElement("span");
-    headingText.textContent = title;
-
-    heading.append(icon, headingText);
-    section.append(heading);
-
-    const list = document.createElement("dl");
-    list.className = `${namespace}__property-list`;
-
-    properties.forEach((property) => {
-      const label = document.createElement("dt");
-      const displayLabel = window.FontInspectorTypography.DISPLAY_LABELS[property];
-      label.textContent = displayLabel;
-
-      const value = typography[property] || "";
-      const valueCell = document.createElement("dd");
-      const valueWrap = document.createElement("span");
-      valueWrap.className = `${namespace}__property-value`;
-
-      const valueText = document.createElement("span");
-      valueText.textContent = value || "Not detected";
-      valueWrap.append(valueText);
-
-      if (property === "color" || property === "backgroundColor") {
-        valueWrap.prepend(createColorSwatch(value));
-      }
-
-      valueCell.append(valueWrap, createCopyButton(`Copy ${displayLabel}`, value));
-      list.append(label, valueCell);
-    });
-
-    section.append(list);
-    return section;
-  }
-
   function createColorSwatch(color) {
     const swatch = document.createElement("span");
     swatch.className = `${namespace}__swatch`;
@@ -392,30 +381,10 @@
     return swatch;
   }
 
-  function createCopyButton(label, value) {
-    const button = createIconButton(label, "../icons/copy.svg");
-    button.addEventListener("click", async () => {
-      playButtonPress(button);
-      const originalTitle = button.title;
-      const copied = await writeClipboard(value);
-      button.title = copied ? `${label} copied` : `${label} failed`;
-
-      if (copied) {
-        setTemporaryIcon(button, "../icons/Check.svg", true);
-        showToast(`${label.replace(/^Copy\s+/, "")} copied`);
-      }
-
-      window.setTimeout(() => {
-        button.title = originalTitle;
-      }, 1100);
-    });
-
-    return button;
-  }
-
   function createCopyCssButton(typography) {
     const button = createIconButton("Copy CSS Snippet", "../icons/code.svg");
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
       playButtonPress(button);
       const cssString = window.FontInspectorTypography.typographyToCss(typography || {});
       const copied = await writeClipboard(cssString);
@@ -431,13 +400,42 @@
     const button = createIconButton("Delete saved font", "../icons/Delete.svg");
     button.classList.add(`${namespace}__delete-button`);
 
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
       playButtonPress(button);
       await deleteSavedFont(id);
       showToast("Font deleted");
     });
 
     return button;
+  }
+
+  async function openSavedFontWindow(savedFont, index) {
+    const inspection = {
+      ok: true,
+      selectedText: savedFont.sampleText || savedFont.name || `Saved Font ${index + 1}`,
+      source: savedFont.source || null,
+      multipleStyles: false,
+      styles: [{
+        elementName: savedFont.elementName,
+        sampleText: savedFont.sampleText,
+        typography: { ...(savedFont.typography || {}) }
+      }]
+    };
+
+    try {
+      await chrome.storage.session.set({ [INSPECTION_STORAGE_KEY]: inspection });
+      await chrome.windows.create({
+        url: chrome.runtime.getURL("src/window/inspector.html"),
+        type: "popup",
+        width: 480,
+        height: 640,
+        focused: true
+      });
+    } catch (error) {
+      console.warn("Font Inspector could not open this saved font.", error);
+      showToast("Could not open font details");
+    }
   }
 
   function setTemporaryIcon(button, temporaryIconSrc, isSuccess = false) {
@@ -540,5 +538,3 @@
     }
   }
 })();
-
-

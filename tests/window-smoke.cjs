@@ -52,6 +52,7 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
   await call('Page.addScriptToEvaluateOnNewDocument', { source: `
     window.testWindow = { id: 1, width: 480, type: 'popup', state: 'normal' };
     window.updates = [];
+    window.createdWindows = [];
     window.copiedValues = [];
     window.savedFonts = [{
       id: 'saved-1',
@@ -73,15 +74,18 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
     });
     window.chrome = {
       storage: {
-        session: { get: async () => ({ fontInspectorLatestInspection: {
-          ok: true, selectedText: 'Good typography starts with the details.',
-          source: { title: 'Example page', url: 'https://example.com' },
-          styles: [{ elementName: 'p', typography: {
-            fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '16px', fontWeight: '400',
-            fontStyle: 'normal', lineHeight: '24px', letterSpacing: '0px', color: '#242628',
-            backgroundColor: 'transparent', textAlign: 'left', textTransform: 'none', textDecorationLine: 'none'
-          } }]
-        } }) },
+        session: {
+          get: async () => ({ fontInspectorLatestInspection: {
+            ok: true, selectedText: 'Good typography starts with the details.',
+            source: { title: 'Example page', url: 'https://example.com' },
+            styles: [{ elementName: 'p', typography: {
+              fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '16px', fontWeight: '400',
+              fontStyle: 'normal', lineHeight: '24px', letterSpacing: '0px', color: '#242628',
+              backgroundColor: 'transparent', textAlign: 'left', textTransform: 'none', textDecorationLine: 'none'
+            } }]
+          } }),
+          set: async data => { window.latestInspection = data.fontInspectorLatestInspection; }
+        },
         local: {
           get: async key => ({ [key]: window.savedFonts }),
           set: async data => {
@@ -90,9 +94,13 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
         },
         onChanged: { addListener: () => {} }
       },
+      runtime: {
+        getURL: path => 'chrome-extension://test/' + path
+      },
       windows: {
         getCurrent: async () => { if (window.fail) throw Error('test'); return { ...window.testWindow }; },
-        update: async (id, data) => { window.updates.push(data); Object.assign(window.testWindow, data); }
+        update: async (id, data) => { window.updates.push(data); Object.assign(window.testWindow, data); },
+        create: async data => { window.createdWindows.push(data); return { id: 2, ...data }; }
       }
     };
   ` });
@@ -159,18 +167,20 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
   })`);
   assert.equal(await evaluate(`document.querySelector('.font-inspector-popup__header h1').textContent`), 'Saved Fonts');
   assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__card').length`), 1);
-  assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__property-list button').length`), 11);
-  assert.deepEqual(await evaluate(`[...document.querySelectorAll('.font-inspector-popup__section-icon')].map(img => img.getAttribute('src'))`), [
-    '../icons/Font.svg',
-    '../icons/Color.svg',
-    '../icons/Format.svg'
-  ]);
+  assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__summary').length`), 1);
+  assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__property-list button').length`), 0);
   assert.equal(await evaluate(`(async () => {
-    const button = document.querySelector('.font-inspector-popup__property-list button');
+    const button = document.querySelector('.font-inspector-popup__card-actions button');
     button.click();
     await new Promise(resolve => setTimeout(resolve, 0));
     return window.copiedValues.at(-1);
-  })()`), 'Arial, Helvetica, sans-serif');
+  })()`), 'font-family: Arial, Helvetica, sans-serif;\\nfont-size: 16px;\\nfont-weight: 400;\\nfont-style: normal;\\nline-height: 24px;\\nletter-spacing: 0px;\\ncolor: #242628;\\ntext-align: left;\\ntext-transform: none;\\ntext-decoration: none;\\nbackground-color: transparent;');
+  assert.equal(await evaluate(`window.createdWindows.length`), 0);
+  assert.deepEqual(await evaluate(`(async () => {
+    document.querySelector('.font-inspector-popup__card').click();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    return [window.createdWindows.length, window.createdWindows[0].url, window.latestInspection.selectedText, window.latestInspection.styles[0].typography.fontSize];
+  })()`), [1, 'chrome-extension://test/src/window/inspector.html', 'Good typography starts with the details.', '16px']);
   await call('Emulation.setDeviceMetricsOverride', { width: 400, height: 800, deviceScaleFactor: 1, mobile: false });
   assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'));
   assert.ok(await evaluate(`document.body.getBoundingClientRect().width >= 400`));

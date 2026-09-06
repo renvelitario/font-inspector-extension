@@ -132,24 +132,6 @@
       return body;
     }
 
-    const preview = document.createElement("blockquote");
-    preview.className = `${namespace}__preview`;
-    preview.textContent = `"${inspection.selectedText}"`;
-
-    if (inspection.styles?.[0]?.typography) {
-      const mainFont = inspection.styles[0].typography.fontFamily;
-      if (mainFont) {
-        preview.style.fontFamily = mainFont;
-      }
-    }
-
-    body.append(preview);
-
-    const source = createSource(inspection.source);
-    if (source) {
-      body.append(source);
-    }
-
     if (inspection.multipleStyles) {
       const notice = document.createElement("div");
       notice.className = `${namespace}__notice`;
@@ -162,33 +144,6 @@
     });
 
     return body;
-  }
-
-  function createSource(source) {
-    if (!source?.url && !source?.title) {
-      return null;
-    }
-
-    const sourceRow = document.createElement("div");
-    sourceRow.className = `${namespace}__source`;
-
-    const label = document.createElement("span");
-    label.textContent = "Source";
-
-    const value = document.createElement("span");
-    value.textContent = getSourceLabel(source);
-
-    sourceRow.append(label, value);
-    return sourceRow;
-  }
-
-  function getSourceLabel(source) {
-    try {
-      const url = new URL(source.url);
-      return source.title ? `${source.title} / ${url.hostname}` : url.hostname;
-    } catch (error) {
-      return source.title || source.url;
-    }
   }
 
   function createStylePanel(styleInfo, totalStyles, index, source) {
@@ -542,5 +497,3 @@
     }
   }
 })();
-
-

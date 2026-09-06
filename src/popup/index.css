@@ -669,6 +669,7 @@ body.theme-dark {
 
 .font-inspector-popup__card {
   padding: 16px;
+  cursor: pointer;
 }
 
 .font-inspector-popup__card:hover {
@@ -676,9 +677,14 @@ body.theme-dark {
   box-shadow: var(--shadow-hover);
 }
 
+.font-inspector-popup__card:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 .font-inspector-popup__card-header {
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .font-inspector-popup__card-actions {
@@ -709,6 +715,49 @@ body.theme-dark {
   line-height: 1.5;
 }
 
+.font-inspector-popup__summary {
+  display: grid;
+  gap: 10px;
+}
+
+.font-inspector-popup__summary-sample {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.font-inspector-popup__summary-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.font-inspector-popup__summary-facts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.font-inspector-popup__summary-color .font-inspector-popup__swatch {
+  width: 12px;
+  height: 12px;
+  flex-basis: 12px;
+}
+
 .font-inspector-popup__section + .font-inspector-popup__section {
   margin-top: 18px;
 }
@@ -728,17 +777,28 @@ body.theme-dark {
 }
 
 .font-inspector-popup__icon-button {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
   border-color: var(--border-color);
   border-radius: 8px;
-  background: var(--bg-surface);
+  background: var(--bg-subtle);
 }
 
 .font-inspector-popup__icon-button:hover {
   background: var(--accent-light);
   border-color: var(--accent-primary);
+}
+
+.font-inspector-popup__property-list .font-inspector-popup__icon-button {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  background: var(--bg-surface);
+}
+
+.font-inspector-popup__property-list .font-inspector-popup__icon-button:hover {
+  background: var(--accent-light);
 }
 
 .font-inspector-popup__button-icon {
@@ -756,4 +816,3 @@ body.theme-dark {
     padding: 24px;
   }
 }
-
