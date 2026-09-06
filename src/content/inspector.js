@@ -59,7 +59,7 @@
 
     document.documentElement.style.cursor = "crosshair";
     window.addEventListener("mousemove", handlePickerMove, true);
-    window.addEventListener("click", handlePickerClick, true);
+    window.addEventListener("pointerdown", handlePickerSelection, true);
     window.addEventListener("keydown", handlePickerKeydown, true);
   }
 
@@ -69,7 +69,7 @@
     }
 
     window.removeEventListener("mousemove", handlePickerMove, true);
-    window.removeEventListener("click", handlePickerClick, true);
+    window.removeEventListener("pointerdown", handlePickerSelection, true);
     window.removeEventListener("keydown", handlePickerKeydown, true);
 
     document.documentElement.style.cursor = pickerState.previousCursor || "";
@@ -94,12 +94,13 @@
     positionPickerOverlay(target);
   }
 
-  function handlePickerClick(event) {
+  function handlePickerSelection(event) {
     if (!pickerState) return;
 
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
+    window.addEventListener("click", suppressPickerClick, true);
 
     const target = pickerState.currentElement || getInspectableTarget(event.target);
     if (!target) {
@@ -116,10 +117,7 @@
     };
 
     stopElementPicker();
-    chrome.runtime.sendMessage({
-      type: "FONT_INSPECTOR_OPEN_INSPECTION",
-      inspection
-    });
+    openInspectionWindow(inspection);
   }
 
   function handlePickerKeydown(event) {
@@ -128,6 +126,24 @@
     event.preventDefault();
     event.stopPropagation();
     stopElementPicker();
+  }
+
+  function suppressPickerClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    window.removeEventListener("click", suppressPickerClick, true);
+  }
+
+  function openInspectionWindow(inspection) {
+    chrome.runtime.sendMessage({
+      type: "FONT_INSPECTOR_OPEN_INSPECTION",
+      inspection
+    }, (response) => {
+      if (chrome.runtime.lastError || !response?.ok) {
+        console.warn("Font Inspector could not open the inspection window.", chrome.runtime.lastError || response);
+      }
+    });
   }
 
   function getInspectableTarget(target) {

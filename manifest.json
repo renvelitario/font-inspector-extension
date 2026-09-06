@@ -9,7 +9,7 @@
     "48": "src/logo/icon-48.png",
     "128": "src/logo/icon-128.png"
   },
-  "permissions": ["contextMenus", "activeTab", "scripting", "storage"],
+  "permissions": ["contextMenus", "activeTab", "scripting", "storage", "windows"],
   "action": {
     "default_title": "Font Inspector",
     "default_icon": {

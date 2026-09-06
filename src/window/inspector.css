@@ -604,7 +604,7 @@ body.theme-dark {
 }
 
 .font-inspector-window__panel:hover {
-  border-color: #c7d0dd;
+  border-color: var(--border-color);
   box-shadow: var(--shadow-hover);
 }
 

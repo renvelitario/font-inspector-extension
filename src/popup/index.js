@@ -155,12 +155,8 @@
 
     titleText.append(title, countText);
     titleWrap.append(logo, titleText);
-    const headerActions = document.createElement("div");
-    headerActions.className = `${namespace}__header-actions`;
-    headerActions.append(createInspectButton(), createThemeToggleButton());
-
-    top.append(titleWrap, headerActions);
-    header.append(top);
+    top.append(titleWrap, createThemeToggleButton());
+    header.append(top, createInspectButton());
 
     if (totalCount > 0) {
       const searchWrap = document.createElement("div");
@@ -218,8 +214,23 @@
   }
 
   function createInspectButton() {
-    const button = createIconButton("Inspect page element", "../icons/Inspect.svg");
-    button.classList.add(`${namespace}__inspect-button`);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `${namespace}__primary-button ${namespace}__inspect-button`;
+    button.title = "Inspect text on page";
+    button.setAttribute("aria-label", "Inspect text on page");
+
+    const icon = document.createElement("img");
+    icon.className = `${namespace}__primary-button-icon`;
+    icon.src = "../icons/Inspect.svg";
+    icon.alt = "";
+    icon.draggable = false;
+    icon.setAttribute("aria-hidden", "true");
+
+    const label = document.createElement("span");
+    label.textContent = "Inspect Text";
+
+    button.append(icon, label);
 
     button.addEventListener("click", async () => {
       playButtonPress(button);
