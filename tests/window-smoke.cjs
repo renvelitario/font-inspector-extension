@@ -108,7 +108,8 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
   await evaluate(`new Promise(resolve => {
     const timer = setInterval(() => { if (document.querySelector('dd')) { clearInterval(timer); resolve(); } }, 20);
   })`);
-  assert.equal(await evaluate(`Promise.all([...document.querySelectorAll('img')].map(img => img.decode())).then(() => document.querySelectorAll('img').length)`), 17);
+  assert.equal(await evaluate(`Promise.all([...document.querySelectorAll('img')].map(img => img.decode())).then(() => document.querySelectorAll('img').length)`), 18);
+  assert.equal(await evaluate(`document.querySelector('.font-inspector-window__logo').getAttribute('src')`), '../logo/Logo.png');
   assert.deepEqual(await evaluate(`[...document.querySelectorAll('.font-inspector-window__section-icon')].map(img => img.getAttribute('src'))`), [
     '../icons/Font.svg',
     '../icons/Color.svg',
@@ -135,7 +136,7 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
     const dimensions = await evaluate(`({ viewport: innerWidth, content: document.documentElement.scrollWidth,
       font: getComputedStyle(document.body).fontFamily })`);
     assert.ok(dimensions.content <= dimensions.viewport, JSON.stringify(dimensions));
-    assert.ok(dimensions.font.includes('Arial') || dimensions.font.includes('system-ui'));
+    assert.ok(dimensions.font.includes('Helvetica') || dimensions.font.includes('Arial'));
     if (width === 380 || width === 480) {
       const { data } = await call('Page.captureScreenshot');
       writeFileSync(join(tmpdir(), 'font-inspector-' + width + '.png'), Buffer.from(data, 'base64'));
@@ -166,6 +167,7 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
     const timer = setInterval(() => { if (document.querySelector('.font-inspector-popup__card')) { clearInterval(timer); resolve(); } }, 20);
   })`);
   assert.equal(await evaluate(`document.querySelector('.font-inspector-popup__header h1').textContent`), 'Saved Fonts');
+  assert.equal(await evaluate(`document.querySelector('.font-inspector-popup__logo').getAttribute('src')`), '../logo/Logo.png');
   assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__card').length`), 1);
   assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__summary').length`), 1);
   assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__property-list button').length`), 0);

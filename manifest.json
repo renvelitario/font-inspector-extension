@@ -3,9 +3,21 @@
   "name": "Font Inspector",
   "description": "Inspect rendered typography from selected webpage text.",
   "version": "1.0.0",
+  "icons": {
+    "16": "src/logo/icon-16.png",
+    "32": "src/logo/icon-32.png",
+    "48": "src/logo/icon-48.png",
+    "128": "src/logo/icon-128.png"
+  },
   "permissions": ["contextMenus", "activeTab", "scripting", "storage"],
   "action": {
     "default_title": "Font Inspector",
+    "default_icon": {
+      "16": "src/logo/icon-16.png",
+      "32": "src/logo/icon-32.png",
+      "48": "src/logo/icon-48.png",
+      "128": "src/logo/icon-128.png"
+    },
     "default_popup": "src/popup/index.html"
   },
   "options_page": "src/popup/index.html",

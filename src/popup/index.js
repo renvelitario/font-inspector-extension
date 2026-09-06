@@ -133,6 +133,16 @@
     const titleWrap = document.createElement("div");
     titleWrap.className = `${namespace}__header-title-wrap`;
 
+    const logo = document.createElement("img");
+    logo.className = `${namespace}__logo`;
+    logo.src = "../logo/Logo.png";
+    logo.alt = "";
+    logo.draggable = false;
+    logo.setAttribute("aria-hidden", "true");
+
+    const titleText = document.createElement("div");
+    titleText.className = `${namespace}__header-title-text`;
+
     const title = document.createElement("h1");
     title.textContent = "Saved Fonts";
 
@@ -143,7 +153,8 @@
       countText.textContent = totalCount === 1 ? "1 saved style" : `${totalCount} saved styles`;
     }
 
-    titleWrap.append(title, countText);
+    titleText.append(title, countText);
+    titleWrap.append(logo, titleText);
     top.append(titleWrap, createThemeToggleButton());
     header.append(top);
 

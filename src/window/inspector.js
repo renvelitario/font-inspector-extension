@@ -89,11 +89,19 @@
     header.className = `${namespace}__header`;
 
     const titleWrap = document.createElement("div");
+    titleWrap.className = `${namespace}__header-title-wrap`;
+
+    const logo = document.createElement("img");
+    logo.className = `${namespace}__logo`;
+    logo.src = "../logo/Logo.png";
+    logo.alt = "";
+    logo.draggable = false;
+    logo.setAttribute("aria-hidden", "true");
 
     const title = document.createElement("h1");
     title.textContent = "Font Inspector";
 
-    titleWrap.append(title);
+    titleWrap.append(logo, title);
     header.append(titleWrap, createThemeToggleButton());
 
     return header;
