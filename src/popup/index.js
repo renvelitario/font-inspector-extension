@@ -155,7 +155,11 @@
 
     titleText.append(title, countText);
     titleWrap.append(logo, titleText);
-    top.append(titleWrap, createThemeToggleButton());
+    const headerActions = document.createElement("div");
+    headerActions.className = `${namespace}__header-actions`;
+    headerActions.append(createInspectButton(), createThemeToggleButton());
+
+    top.append(titleWrap, headerActions);
     header.append(top);
 
     if (totalCount > 0) {
@@ -211,6 +215,68 @@
     });
 
     return button;
+  }
+
+  function createInspectButton() {
+    const button = createIconButton("Inspect page element", "../icons/Inspect.svg");
+    button.classList.add(`${namespace}__inspect-button`);
+
+    button.addEventListener("click", async () => {
+      playButtonPress(button);
+      const started = await startElementPicker();
+      if (started) {
+        window.close();
+      } else {
+        showToast("Could not start inspector");
+      }
+    });
+
+    return button;
+  }
+
+  async function startElementPicker() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) {
+      return false;
+    }
+
+    try {
+      await sendStartPickerMessage(tab.id);
+      return true;
+    } catch (error) {
+      return injectInspector(tab.id);
+    }
+  }
+
+  async function injectInspector(tabId) {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: [
+          "src/utils/typography.js",
+          "src/content/inspector.js"
+        ]
+      });
+
+      await sendStartPickerMessage(tabId);
+      return true;
+    } catch (error) {
+      console.warn("Font Inspector could not start element picker.", error);
+      return false;
+    }
+  }
+
+  function sendStartPickerMessage(tabId) {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.sendMessage(tabId, { type: "FONT_INSPECTOR_START_PICKER" }, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+
+        response?.ok ? resolve(response) : reject(new Error("Element picker did not start."));
+      });
+    });
   }
 
   function createBody(savedFonts) {

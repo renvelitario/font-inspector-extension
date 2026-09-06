@@ -164,6 +164,12 @@ button, input {
   gap: 8px;
 }
 
+.font-inspector-popup__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .font-inspector-popup__header-title-wrap {
   display: flex;
   align-items: baseline;
@@ -828,6 +834,10 @@ body.theme-dark {
 .font-inspector-popup__icon-button:hover {
   background: var(--accent-light);
   border-color: var(--accent-primary);
+}
+
+.font-inspector-popup__inspect-button {
+  border-color: color-mix(in srgb, var(--accent-primary) 55%, var(--border-color));
 }
 
 .font-inspector-popup__property-list .font-inspector-popup__icon-button {

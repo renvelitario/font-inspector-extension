@@ -260,6 +260,37 @@
     };
   }
 
+  function inspectElement(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+      return {
+        ok: false,
+        reason: "Font Inspector could not inspect this element."
+      };
+    }
+
+    const typography = getComputedTypography(element);
+    const sampleText = getElementSampleText(element);
+
+    return {
+      ok: true,
+      selectedText: sampleText || element.tagName.toLowerCase(),
+      multipleStyles: false,
+      styles: [{
+        typography,
+        elementName: element.tagName.toLowerCase(),
+        sampleText
+      }]
+    };
+  }
+
+  function getElementSampleText(element) {
+    const text = (element.innerText || element.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return text.slice(0, 120);
+  }
+
   function getFallbackElement(range) {
     const container = range.commonAncestorContainer;
 
@@ -291,6 +322,7 @@
   window.FontInspectorTypography = {
     DISPLAY_LABELS,
     TYPOGRAPHY_PROPERTIES,
+    inspectElement,
     inspectSelection,
     typographyToCss
   };

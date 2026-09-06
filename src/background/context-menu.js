@@ -26,6 +26,21 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type !== "FONT_INSPECTOR_OPEN_INSPECTION") {
+    return;
+  }
+
+  openInspectorWindow(message.inspection)
+    .then(() => sendResponse({ ok: true }))
+    .catch((error) => {
+      console.warn("Font Inspector could not open the inspection window.", error);
+      sendResponse({ ok: false });
+    });
+
+  return true;
+});
+
 async function inspectTabSelection(tabId) {
   try {
     return await sendInspectionMessage(tabId);
