@@ -144,13 +144,13 @@
     titleText.className = `${namespace}__header-title-text`;
 
     const title = document.createElement("h1");
-    title.textContent = "Saved Fonts";
+    title.textContent = "FONT INSPECTOR";
 
     const countText = document.createElement("p");
     if (currentSearchQuery.trim()) {
-      countText.textContent = `${count} of ${totalCount} saved`;
+      countText.textContent = `SAVED FONTS / ${count} OF ${totalCount}`;
     } else {
-      countText.textContent = totalCount === 1 ? "1 saved style" : `${totalCount} saved styles`;
+      countText.textContent = totalCount === 1 ? "SAVED FONTS / 1 STYLE" : `SAVED FONTS / ${totalCount} STYLES`;
     }
 
     titleText.append(title, countText);

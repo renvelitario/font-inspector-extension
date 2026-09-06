@@ -166,7 +166,7 @@ const timeout = setTimeout(() => { browser.kill(); process.exit(1); }, 45000);
   await evaluate(`new Promise(resolve => {
     const timer = setInterval(() => { if (document.querySelector('.font-inspector-popup__card')) { clearInterval(timer); resolve(); } }, 20);
   })`);
-  assert.equal(await evaluate(`document.querySelector('.font-inspector-popup__header h1').textContent`), 'Saved Fonts');
+  assert.equal(await evaluate(`document.querySelector('.font-inspector-popup__header h1').textContent`), 'FONT INSPECTOR');
   assert.equal(await evaluate(`document.querySelector('.font-inspector-popup__logo').getAttribute('src')`), '../logo/Logo.png');
   assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__card').length`), 1);
   assert.equal(await evaluate(`document.querySelectorAll('.font-inspector-popup__summary').length`), 1);
