@@ -104,10 +104,22 @@
     const title = document.createElement("h1");
     title.textContent = "Font Inspector";
 
-    titleWrap.append(logo, title);
+    const titleText = document.createElement("div");
+    titleText.className = `${namespace}__header-title-text`;
+
+    const version = document.createElement("p");
+    version.className = `${namespace}__version`;
+    version.textContent = `Version ${getExtensionVersion()}`;
+
+    titleText.append(title, version);
+    titleWrap.append(logo, titleText);
     header.append(titleWrap, createThemeToggleButton());
 
     return header;
+  }
+
+  function getExtensionVersion() {
+    return chrome.runtime?.getManifest?.().version || "1.0.0";
   }
 
   function createThemeToggleButton() {
@@ -171,33 +183,24 @@
     titleRow.className = `${namespace}__panel-title-row`;
 
     const title = document.createElement("h2");
-    title.textContent = totalStyles > 1
-      ? `Style ${index + 1}`
-      : "Typography";
+    title.textContent = getPrimaryFontName(styleInfo) || (totalStyles > 1 ? `Style ${index + 1}` : "Selected text");
 
     titleRow.append(title);
 
-    if (styleInfo.elementName) {
-      const badge = document.createElement("span");
-      badge.className = `${namespace}__tag-badge`;
-      badge.textContent = styleInfo.elementName;
-      titleRow.append(badge);
-    }
+    const subtitle = document.createElement("p");
+    subtitle.textContent = totalStyles > 1 ? `Style ${index + 1}` : "Selected text";
 
-    const sample = document.createElement("p");
-    sample.textContent = totalStyles > 1 && styleInfo.sampleText ? `"${styleInfo.sampleText}"` : (styleInfo.typography.fontFamily?.split(",")[0] || styleInfo.elementName);
-
-    titleWrap.append(titleRow, sample);
+    titleWrap.append(titleRow, subtitle);
 
     const actions = document.createElement("div");
     actions.className = `${namespace}__panel-actions`;
     actions.append(
       createCopyCssButton(styleInfo.typography),
-      createSaveButton(styleInfo, index, source)
+      createSavedFontActionButton(styleInfo, index, source)
     );
 
     panelHeader.append(titleWrap, actions);
-    panel.append(panelHeader);
+    panel.append(panelHeader, createSampleHighlight(styleInfo));
 
     const sections = [
       ["Type", ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing"]],
@@ -210,6 +213,47 @@
     });
 
     return panel;
+  }
+
+  function createSampleHighlight(styleInfo) {
+    const sample = document.createElement("div");
+    sample.className = `${namespace}__sample-highlight`;
+
+    const text = document.createElement("p");
+    text.textContent = getSampleText(styleInfo);
+    applySampleTypography(text, styleInfo.typography || {});
+
+    sample.append(text);
+    return sample;
+  }
+
+  function getPrimaryFontName(styleInfo) {
+    return (styleInfo.typography?.fontFamily || "")
+      .split(",")[0]
+      .trim()
+      .replace(/^["']|["']$/g, "");
+  }
+
+  function getSampleText(styleInfo) {
+    const normalized = (styleInfo.sampleText || "").replace(/\s+/g, " ").trim();
+    return normalized || "Lorem ipsum";
+  }
+
+  function applySampleTypography(element, typography) {
+    [
+      "fontFamily",
+      "fontStyle",
+      "letterSpacing",
+      "textAlign",
+      "textTransform",
+      "textDecorationLine"
+    ].forEach((property) => {
+      if (typography[property]) {
+        element.style[property] = typography[property];
+      }
+    });
+
+    element.style.color = "var(--sample-text)";
   }
 
   function createCopyCssButton(typography) {
@@ -229,12 +273,32 @@
     return button;
   }
 
-  function createSaveButton(styleInfo, index, source) {
+  function createSavedFontActionButton(styleInfo, index, source) {
     const button = createIconButton("Save Typography", "../icons/save.svg");
     button.classList.add(`${namespace}__save-button`);
+    updateSavedFontActionButton(button, styleInfo);
+    refreshSavedFontActionState(button, styleInfo);
 
     button.addEventListener("click", async () => {
       playButtonPress(button);
+
+      if (styleInfo.savedFontId) {
+        const confirmed = window.confirm("Delete this saved font?");
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          await deleteSavedFont(styleInfo.savedFontId);
+          styleInfo.savedFontId = null;
+          updateSavedFontActionButton(button, styleInfo);
+          showToast("Saved font deleted");
+        } catch (error) {
+          console.warn("Font Inspector could not delete this saved font.", error);
+          showToast("Failed to delete saved font");
+        }
+        return;
+      }
 
       const fallbackName = getDefaultSavedFontName(styleInfo, index);
       const typedName = window.prompt("Name this saved font", fallbackName);
@@ -246,9 +310,9 @@
       const originalTitle = button.title;
 
       try {
-        await saveFontDetails(name, styleInfo, source);
-        button.title = "Saved";
-        button.setAttribute("aria-label", "Saved");
+        const savedFont = await saveFontDetails(name, styleInfo, source);
+        styleInfo.savedFontId = savedFont.id;
+        updateSavedFontActionButton(button, styleInfo);
         setTemporaryIcon(button, "../icons/Check.svg", true);
         showToast("Typography saved to library");
       } catch (error) {
@@ -259,12 +323,45 @@
       }
 
       window.setTimeout(() => {
-        button.title = originalTitle;
-        button.setAttribute("aria-label", originalTitle);
+        if (!styleInfo.savedFontId) {
+          button.title = originalTitle;
+          button.setAttribute("aria-label", originalTitle);
+        }
       }, 1100);
     });
 
     return button;
+  }
+
+  function updateSavedFontActionButton(button, styleInfo) {
+    const isSaved = Boolean(styleInfo.savedFontId);
+    const icon = button.querySelector(`.${namespace}__button-icon`);
+    button.classList.toggle(`${namespace}__save-button`, !isSaved);
+    button.classList.toggle(`${namespace}__delete-button`, isSaved);
+    button.title = isSaved ? "Delete saved font" : "Save Typography";
+    button.setAttribute("aria-label", button.title);
+
+    if (icon) {
+      icon.src = isSaved ? "../icons/Delete.svg" : "../icons/save.svg";
+    }
+  }
+
+  async function refreshSavedFontActionState(button, styleInfo) {
+    if (styleInfo.savedFontId) {
+      return;
+    }
+
+    let savedFont = null;
+    try {
+      savedFont = await findMatchingSavedFont(styleInfo);
+    } catch (error) {
+      console.warn("Font Inspector could not check saved state.", error);
+    }
+
+    if (savedFont) {
+      styleInfo.savedFontId = savedFont.id;
+      updateSavedFontActionButton(button, styleInfo);
+    }
   }
 
   function getDefaultSavedFontName(styleInfo, index) {
@@ -294,6 +391,41 @@
     await chrome.storage.local.set({
       [SAVED_FONTS_STORAGE_KEY]: [savedFont, ...savedFonts].slice(0, 80)
     });
+
+    return savedFont;
+  }
+
+  async function deleteSavedFont(id) {
+    const result = await chrome.storage.local.get(SAVED_FONTS_STORAGE_KEY);
+    const savedFonts = Array.isArray(result[SAVED_FONTS_STORAGE_KEY])
+      ? result[SAVED_FONTS_STORAGE_KEY]
+      : [];
+
+    await chrome.storage.local.set({
+      [SAVED_FONTS_STORAGE_KEY]: savedFonts.filter((savedFont) => savedFont.id !== id)
+    });
+  }
+
+  async function findMatchingSavedFont(styleInfo) {
+    const result = await chrome.storage.local.get(SAVED_FONTS_STORAGE_KEY);
+    const savedFonts = Array.isArray(result[SAVED_FONTS_STORAGE_KEY])
+      ? result[SAVED_FONTS_STORAGE_KEY]
+      : [];
+    const signature = getTypographySignature(styleInfo.typography);
+    const sampleText = normalizeComparableText(styleInfo.sampleText);
+
+    return savedFonts.find((savedFont) => (
+      getTypographySignature(savedFont.typography) === signature &&
+      normalizeComparableText(savedFont.sampleText) === sampleText
+    ));
+  }
+
+  function getTypographySignature(typography) {
+    return window.FontInspectorTypography.typographyToCss(typography || {});
+  }
+
+  function normalizeComparableText(value) {
+    return (value || "").replace(/\s+/g, " ").trim();
   }
 
   function createSavedFontId() {

@@ -1,5 +1,6 @@
 (() => {
   let pickerState = null;
+  let archivoFontPromise = null;
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type === "FONT_INSPECTOR_INSPECT_SELECTION") {
@@ -17,6 +18,7 @@
 
   function startElementPicker() {
     stopElementPicker();
+    loadArchivoFont();
 
     const overlay = document.createElement("div");
     overlay.style.position = "fixed";
@@ -30,8 +32,8 @@
     outline.style.zIndex = "2147483647";
     outline.style.pointerEvents = "none";
     outline.style.border = "2px dashed #35c8f6";
-    outline.style.borderRadius = "6px";
-    outline.style.boxShadow = "0 0 0 9999px rgb(15 23 42 / 12%), 0 0 0 4px rgb(53 200 246 / 20%)";
+    outline.style.borderRadius = "0";
+    outline.style.boxShadow = "none";
     outline.style.display = "none";
 
     const label = document.createElement("div");
@@ -43,7 +45,7 @@
     label.style.borderRadius = "6px";
     label.style.background = "#0f172a";
     label.style.color = "#f8fafc";
-    label.style.font = "12px Archivo, Arial, sans-serif";
+    label.style.font = '12px "Archivo", Arial, sans-serif';
     label.style.lineHeight = "1.2";
     label.style.display = "none";
 
@@ -61,6 +63,30 @@
     window.addEventListener("mousemove", handlePickerMove, true);
     window.addEventListener("pointerdown", handlePickerSelection, true);
     window.addEventListener("keydown", handlePickerKeydown, true);
+  }
+
+  function loadArchivoFont() {
+    if (archivoFontPromise || !document.fonts || typeof FontFace === "undefined") {
+      return archivoFontPromise;
+    }
+
+    archivoFontPromise = new FontFace(
+      "Archivo",
+      `url("${chrome.runtime.getURL("src/fonts/Archivo-VariableFont_wdth,wght.ttf")}")`,
+      {
+        style: "normal",
+        weight: "100 900"
+      }
+    )
+      .load()
+      .then((font) => {
+        document.fonts.add(font);
+      })
+      .catch((error) => {
+        console.warn("Font Inspector could not load Archivo.", error);
+      });
+
+    return archivoFontPromise;
   }
 
   function stopElementPicker() {
@@ -179,9 +205,8 @@
     pickerState.outline.style.width = `${visibleWidth}px`;
     pickerState.outline.style.height = `${visibleHeight}px`;
 
-    const tagName = element.tagName.toLowerCase();
     const fontFamily = window.getComputedStyle(element).fontFamily.split(",")[0].replace(/^["']|["']$/g, "");
-    pickerState.label.textContent = fontFamily ? `${tagName} / ${fontFamily}` : tagName;
+    pickerState.label.textContent = fontFamily || "Font";
     pickerState.label.style.display = "block";
     pickerState.label.style.left = `${Math.max(8, Math.min(rect.left, innerWidth - 160))}px`;
     pickerState.label.style.top = `${Math.max(8, rect.top - 30)}px`;

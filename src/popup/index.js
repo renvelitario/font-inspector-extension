@@ -81,18 +81,19 @@
   }
 
   function renderLoading() {
-    root.replaceChildren(createHeader(0, 0), createMessage("Loading saved fonts."));
+    root.replaceChildren(createHeader(0, 0), createMessageBody("Loading saved fonts."), createFooter());
   }
 
   function renderError() {
-    root.replaceChildren(createHeader(0, 0), createMessage("Saved fonts could not be loaded."));
+    root.replaceChildren(createHeader(0, 0), createMessageBody("Saved fonts could not be loaded."), createFooter());
   }
 
   function render() {
     const filteredFonts = filterSavedFonts(currentSavedFonts, currentSearchQuery);
     root.replaceChildren(
       createHeader(filteredFonts.length, currentSavedFonts.length),
-      createBody(filteredFonts)
+      createBody(filteredFonts),
+      createFooter()
     );
   }
 
@@ -149,10 +150,14 @@
     const title = document.createElement("h1");
     title.textContent = "Font Inspector";
 
-    titleText.append(title);
+    const version = document.createElement("p");
+    version.className = `${namespace}__version`;
+    version.textContent = `Version ${getExtensionVersion()}`;
+
+    titleText.append(title, version);
     titleWrap.append(logo, titleText);
     top.append(titleWrap, createThemeToggleButton());
-    header.append(top, createInspectButton(), createHeaderDivider(), createSavedFontsHeader(count, totalCount));
+    header.append(top, createHeaderDivider(), createSavedFontsHeader(count, totalCount));
 
     if (totalCount > 0) {
       const searchWrap = document.createElement("div");
@@ -167,9 +172,9 @@
       const searchInput = document.createElement("input");
       searchInput.type = "search";
       searchInput.className = `${namespace}__search-input`;
-      searchInput.placeholder = "Filter saved fonts...";
+      searchInput.placeholder = "Search saved fonts...";
       searchInput.value = currentSearchQuery;
-      searchInput.setAttribute("aria-label", "Filter saved fonts");
+      searchInput.setAttribute("aria-label", "Search saved fonts");
 
       searchInput.addEventListener("input", (e) => {
         currentSearchQuery = e.target.value;
@@ -188,9 +193,23 @@
     return header;
   }
 
+  function createFooter() {
+    const footer = document.createElement("footer");
+    footer.className = `${namespace}__footer`;
+    footer.append(createInspectButton());
+    return footer;
+  }
+
+  function getExtensionVersion() {
+    return chrome.runtime?.getManifest?.().version || "1.0.0";
+  }
+
   function createSavedFontsHeader(count, totalCount) {
     const sectionHeader = document.createElement("div");
     sectionHeader.className = `${namespace}__saved-header`;
+
+    const titleWrap = document.createElement("div");
+    titleWrap.className = `${namespace}__saved-header-title`;
 
     const heading = document.createElement("h2");
     heading.textContent = "Saved Fonts";
@@ -202,8 +221,32 @@
       countText.textContent = totalCount === 1 ? "1 font" : `${totalCount} fonts`;
     }
 
-    sectionHeader.append(heading, countText);
+    titleWrap.append(heading, countText);
+    sectionHeader.append(titleWrap);
+
+    if (totalCount > 0) {
+      sectionHeader.append(createClearSavedFontsButton());
+    }
+
     return sectionHeader;
+  }
+
+  function createClearSavedFontsButton() {
+    const button = createIconButton("Clear all saved fonts", "../icons/Clear.svg");
+    button.classList.add(`${namespace}__clear-button`);
+
+    button.addEventListener("click", async () => {
+      playButtonPress(button);
+      const confirmed = window.confirm("Clear all saved fonts? This cannot be undone.");
+      if (!confirmed) {
+        return;
+      }
+
+      await clearSavedFonts();
+      showToast("Saved fonts cleared");
+    });
+
+    return button;
   }
 
   function createHeaderDivider() {
@@ -337,6 +380,13 @@
     message.className = `${namespace}__empty`;
     message.textContent = text;
     return message;
+  }
+
+  function createMessageBody(text) {
+    const body = document.createElement("div");
+    body.className = `${namespace}__body`;
+    body.append(createMessage(text));
+    return body;
   }
 
   function createSavedFontCard(savedFont, index) {
@@ -526,6 +576,7 @@
       source: savedFont.source || null,
       multipleStyles: false,
       styles: [{
+        savedFontId: savedFont.id,
         elementName: savedFont.elementName,
         sampleText: savedFont.sampleText,
         typography: { ...(savedFont.typography || {}) }
@@ -591,6 +642,13 @@
 
     await chrome.storage.local.set({ [STORAGE_KEY]: nextSavedFonts });
     currentSavedFonts = nextSavedFonts;
+    render();
+  }
+
+  async function clearSavedFonts() {
+    await chrome.storage.local.set({ [STORAGE_KEY]: [] });
+    currentSavedFonts = [];
+    currentSearchQuery = "";
     render();
   }
 
