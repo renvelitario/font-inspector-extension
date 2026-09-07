@@ -1,0 +1,152 @@
+/* Dark theme tokens only. Component CSS should consume these variables. */
+.theme-dark,
+body.theme-dark {
+  color-scheme: dark;
+
+  --bg-canvas: #101317;
+  --bg-surface: #171b21;
+  --bg-subtle: #20262f;
+  --footer-bg: #0b0e12;
+  --confirm-overlay: rgb(0 0 0 / 44%);
+  --bg-input: #171b21;
+  --border-color: #303844;
+  --border-hover: #465465;
+  --border-subtle: #252b34;
+  --divider-color: #3f4a58;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-subtle: #94a3b8;
+
+  --accent-primary: #0aaee0;
+  --accent-hover: #007095;
+  --accent-light: #12313c;
+  --focus-outline: #35c8f6;
+  --focus-ring: rgb(53 200 246 / 36%);
+
+  --primary-button-bg: #0080a8;
+  --primary-button-hover: #007095;
+  --primary-button-text: #ffffff;
+  --primary-button-icon-filter: brightness(0) invert(1);
+  --accent-icon-filter: brightness(0) invert(1);
+
+  --action-bg: #2a313b;
+  --action-hover: #374151;
+  --action-icon-filter: brightness(0.96);
+
+  --danger-color: #f87171;
+  --danger-light: #7f1d1d;
+  --danger-hover: #b91c1c;
+  --danger-soft-bg: #3b1719;
+  --danger-button-text: #fff7f7;
+  --delete-bg: #a93c38;
+  --delete-hover: #87302d;
+  --delete-icon-filter: brightness(0) invert(1);
+  --clear-bg: #3a2b12;
+  --clear-hover: #4b3716;
+  --clear-strong-bg: #c2410c;
+  --clear-strong-hover: #9a3412;
+  --clear-button-text: #fff7ed;
+  --clear-button-icon-filter: brightness(0) invert(1);
+  --clear-icon-filter: invert(78%) sepia(76%) saturate(833%) hue-rotate(351deg)
+    brightness(102%) contrast(95%);
+
+  --confirm-icon-filter: invert(68%) sepia(27%) saturate(1348%)
+    hue-rotate(316deg) brightness(101%) contrast(95%);
+  --success-color: #34d399;
+  --success-light: #064e3b;
+  --success-icon-filter: invert(79%) sepia(55%) saturate(602%)
+    hue-rotate(101deg) brightness(94%) contrast(90%);
+
+  --badge-bg: #17323d;
+  --badge-text: #a5eaff;
+  --sample-bg: #162531;
+  --sample-border: #25566a;
+  --sample-text: #f8fafc;
+
+  --notice-bg: #f8fafc;
+  --notice-border: #cbd5e1;
+  --notice-text: #334155;
+
+  --icon-filter: brightness(0.85);
+  --icon-filter-hover: brightness(1);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 28%);
+  --shadow-hover: 0 8px 20px rgb(0 0 0 / 32%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light):not(.theme-dark),
+  body:not(.theme-light):not(.theme-dark) {
+    color-scheme: dark;
+
+    --bg-canvas: #101317;
+    --bg-surface: #171b21;
+    --bg-subtle: #20262f;
+    --footer-bg: #0b0e12;
+    --confirm-overlay: rgb(0 0 0 / 44%);
+    --bg-input: #171b21;
+    --border-color: #303844;
+    --border-hover: #465465;
+    --border-subtle: #252b34;
+    --divider-color: #3f4a58;
+
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-subtle: #94a3b8;
+
+    --accent-primary: #0080a8;
+    --accent-hover: #007095;
+    --accent-light: #12313c;
+    --focus-outline: #35c8f6;
+    --focus-ring: rgb(53 200 246 / 36%);
+
+    --primary-button-bg: #0080a8;
+    --primary-button-hover: #007095;
+    --primary-button-text: #ffffff;
+    --primary-button-icon-filter: brightness(0) invert(1);
+    --accent-icon-filter: brightness(0) invert(1);
+
+    --action-bg: #2a313b;
+    --action-hover: #374151;
+    --action-icon-filter: brightness(0.96);
+
+    --danger-color: #f87171;
+    --danger-light: #7f1d1d;
+    --danger-hover: #b91c1c;
+    --danger-soft-bg: #3b1719;
+    --danger-button-text: #fff7f7;
+    --delete-bg: #a93c38;
+    --delete-hover: #87302d;
+    --delete-icon-filter: brightness(0) invert(1);
+    --clear-bg: #3a2b12;
+    --clear-hover: #4b3716;
+    --clear-strong-bg: #c2410c;
+    --clear-strong-hover: #9a3412;
+    --clear-button-text: #fff7ed;
+    --clear-button-icon-filter: brightness(0) invert(1);
+    --clear-icon-filter: invert(78%) sepia(76%) saturate(833%)
+      hue-rotate(351deg) brightness(102%) contrast(95%);
+
+    --confirm-icon-filter: invert(68%) sepia(27%) saturate(1348%)
+      hue-rotate(316deg) brightness(101%) contrast(95%);
+    --success-color: #34d399;
+    --success-light: #064e3b;
+    --success-icon-filter: invert(79%) sepia(55%) saturate(602%)
+      hue-rotate(101deg) brightness(94%) contrast(90%);
+
+    --badge-bg: #17323d;
+    --badge-text: #a5eaff;
+    --sample-bg: #162531;
+    --sample-border: #25566a;
+    --sample-text: #f8fafc;
+
+    --notice-bg: #f8fafc;
+    --notice-border: #cbd5e1;
+    --notice-text: #334155;
+
+    --icon-filter: brightness(0.85);
+    --icon-filter-hover: brightness(1);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 28%);
+    --shadow-hover: 0 8px 20px rgb(0 0 0 / 32%);
+  }
+}

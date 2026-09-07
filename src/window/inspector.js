@@ -16,6 +16,7 @@
   let resizePending = false;
   let currentTheme = "system";
   let toastTimer = null;
+  let confirmDialog = null;
 
   document.addEventListener("DOMContentLoaded", () => {
     initTheme();
@@ -84,7 +85,7 @@
   }
 
   function render(inspection) {
-    root.replaceChildren(createHeader(), createBody(inspection));
+    root.replaceChildren(createHeader(), createBody(inspection), createFooter());
   }
 
   function createHeader() {
@@ -138,6 +139,51 @@
     button.addEventListener("click", () => {
       playButtonPress(button);
       toggleTheme();
+    });
+
+    return button;
+  }
+
+  function createFooter() {
+    const footer = document.createElement("footer");
+    footer.className = `${namespace}__footer`;
+    footer.append(createOpenLibraryButton());
+    return footer;
+  }
+
+  function createOpenLibraryButton() {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `${namespace}__primary-button ${namespace}__library-button`;
+    button.title = "Open font library";
+    button.setAttribute("aria-label", "Open font library");
+
+    const icon = document.createElement("img");
+    icon.className = `${namespace}__primary-button-icon`;
+    icon.src = "../icons/Folder.svg";
+    icon.alt = "";
+    icon.draggable = false;
+    icon.setAttribute("aria-hidden", "true");
+
+    const label = document.createElement("span");
+    label.textContent = "Font Library";
+
+    button.append(icon, label);
+
+    button.addEventListener("click", async () => {
+      playButtonPress(button);
+      try {
+        await chrome.windows.create({
+          url: chrome.runtime.getURL("src/popup/index.html"),
+          type: "popup",
+          width: 420,
+          height: 640,
+          focused: true
+        });
+      } catch (error) {
+        console.warn("Font Inspector could not open the font library.", error);
+        showToast("Could not open font library");
+      }
     });
 
     return button;
@@ -283,7 +329,11 @@
       playButtonPress(button);
 
       if (styleInfo.savedFontId) {
-        const confirmed = window.confirm("Delete this saved font?");
+        const confirmed = await showConfirmDialog({
+          title: "Delete saved font?",
+          message: "This will remove this font from your saved list.",
+          confirmLabel: "Delete"
+        });
         if (!confirmed) {
           return;
         }
@@ -312,9 +362,13 @@
       try {
         const savedFont = await saveFontDetails(name, styleInfo, source);
         styleInfo.savedFontId = savedFont.id;
-        updateSavedFontActionButton(button, styleInfo);
-        setTemporaryIcon(button, "../icons/Check.svg", true);
+        setTemporaryIcon(button, "../icons/Check.svg");
         showToast("Typography saved to library");
+        window.setTimeout(() => {
+          if (styleInfo.savedFontId === savedFont.id) {
+            updateSavedFontActionButton(button, styleInfo);
+          }
+        }, 1250);
       } catch (error) {
         console.warn("Font Inspector could not save this font.", error);
         button.title = "Save failed";
@@ -579,6 +633,83 @@
     toastTimer = window.setTimeout(() => {
       toast.remove();
     }, 1800);
+  }
+
+  function showConfirmDialog({ title, message, confirmLabel = "Confirm", iconSrc = "../icons/Delete.svg" }) {
+    if (confirmDialog) {
+      confirmDialog.remove();
+      confirmDialog = null;
+    }
+
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = `${namespace}__confirm-overlay`;
+
+      const dialog = document.createElement("section");
+      dialog.className = `${namespace}__confirm-dialog`;
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+
+      const iconWrap = document.createElement("div");
+      iconWrap.className = `${namespace}__confirm-icon-wrap`;
+
+      const icon = document.createElement("img");
+      icon.className = `${namespace}__confirm-icon`;
+      icon.src = iconSrc;
+      icon.alt = "";
+      icon.draggable = false;
+      icon.setAttribute("aria-hidden", "true");
+
+      const heading = document.createElement("h2");
+      heading.textContent = title;
+
+      const body = document.createElement("p");
+      body.textContent = message;
+
+      const actions = document.createElement("div");
+      actions.className = `${namespace}__confirm-actions`;
+
+      const cancelButton = document.createElement("button");
+      cancelButton.type = "button";
+      cancelButton.className = `${namespace}__confirm-cancel`;
+      cancelButton.textContent = "Cancel";
+
+      const confirmButton = document.createElement("button");
+      confirmButton.type = "button";
+      confirmButton.className = `${namespace}__confirm-accept`;
+      confirmButton.textContent = confirmLabel;
+
+      const handleKeydown = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          close(false);
+        }
+      };
+
+      const close = (confirmed) => {
+        document.removeEventListener("keydown", handleKeydown, true);
+        overlay.remove();
+        confirmDialog = null;
+        resolve(confirmed);
+      };
+
+      cancelButton.addEventListener("click", () => close(false));
+      confirmButton.addEventListener("click", () => close(true));
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+          close(false);
+        }
+      });
+
+      document.addEventListener("keydown", handleKeydown, true);
+      iconWrap.append(icon);
+      actions.append(cancelButton, confirmButton);
+      dialog.append(iconWrap, heading, body, actions);
+      overlay.append(dialog);
+      document.body.append(overlay);
+      confirmDialog = overlay;
+      confirmButton.focus();
+    });
   }
 
   async function writeClipboard(value) {

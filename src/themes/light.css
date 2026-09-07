@@ -1,0 +1,76 @@
+/* Light theme tokens only. Component CSS should consume these variables. */
+:root,
+.theme-light,
+body.theme-light {
+  color-scheme: light;
+
+  --bg-canvas: #f6f7f9;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f3f5f7;
+  --footer-bg: #eceff3;
+  --confirm-overlay: rgb(15 23 42 / 18%);
+  --bg-input: #ffffff;
+  --border-color: #d9dee7;
+  --border-hover: #b9c4d2;
+  --border-subtle: #eef1f5;
+  --divider-color: #c5ceda;
+
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-subtle: #64748b;
+
+  --accent-primary: #0080a8;
+  --accent-hover: #007095;
+  --accent-light: #e8f9fe;
+  --focus-outline: #087ea4;
+  --focus-ring: rgb(8 126 164 / 32%);
+
+  --primary-button-bg: #0080a8;
+  --primary-button-hover: #007095;
+  --primary-button-text: #ffffff;
+  --primary-button-icon-filter: brightness(0) invert(1);
+  --accent-icon-filter: brightness(0) invert(1);
+
+  --action-bg: #e8edf3;
+  --action-hover: #dbe3ec;
+  --action-icon-filter: brightness(0.24);
+
+  --danger-color: #ef4444;
+  --danger-light: #fee2e2;
+  --danger-hover: #dc2626;
+  --danger-soft-bg: #fee2e2;
+  --danger-button-text: #ffffff;
+  --delete-bg: #c43b36;
+  --delete-hover: #a92f2b;
+  --delete-icon-filter: brightness(0) invert(1);
+  --clear-bg: #fff3d6;
+  --clear-hover: #ffe4a3;
+  --clear-strong-bg: #c2410c;
+  --clear-strong-hover: #9a3412;
+  --clear-button-text: #ffffff;
+  --clear-button-icon-filter: brightness(0) invert(1);
+  --clear-icon-filter: invert(43%) sepia(91%) saturate(1225%) hue-rotate(8deg)
+    brightness(93%) contrast(95%);
+
+  --confirm-icon-filter: invert(37%) sepia(57%) saturate(1597%)
+    hue-rotate(327deg) brightness(87%) contrast(88%);
+  --success-color: #10b981;
+  --success-light: #d1fae5;
+  --success-icon-filter: invert(48%) sepia(79%) saturate(420%)
+    hue-rotate(110deg);
+
+  --badge-bg: #e9f7fc;
+  --badge-text: #155e75;
+  --sample-bg: #eff6fb;
+  --sample-border: #c7e9f6;
+  --sample-text: #0f172a;
+
+  --notice-bg: #f8fafc;
+  --notice-border: #cbd5e1;
+  --notice-text: #475569;
+
+  --icon-filter: brightness(0.35);
+  --icon-filter-hover: brightness(0.15);
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 5%);
+  --shadow-hover: 0 6px 16px rgb(15 23 42 / 8%);
+}

@@ -8,6 +8,7 @@
   let currentSearchQuery = "";
   let currentTheme = "system";
   let toastTimer = null;
+  let confirmDialog = null;
 
   document.addEventListener("DOMContentLoaded", () => {
     initTheme();
@@ -111,8 +112,7 @@
         (font.source.url && font.source.url.toLowerCase().includes(q))
       );
       const sampleMatch = font.sampleText && font.sampleText.toLowerCase().includes(q);
-      const elementMatch = font.elementName && font.elementName.toLowerCase().includes(q);
-      return nameMatch || familyMatch || sourceMatch || sampleMatch || elementMatch;
+      return nameMatch || familyMatch || sourceMatch || sampleMatch;
     });
   }
 
@@ -235,9 +235,20 @@
     const button = createIconButton("Clear all saved fonts", "../icons/Clear.svg");
     button.classList.add(`${namespace}__clear-button`);
 
+    const label = document.createElement("span");
+    label.className = `${namespace}__clear-button-label`;
+    label.textContent = "Clear";
+    button.append(label);
+
     button.addEventListener("click", async () => {
       playButtonPress(button);
-      const confirmed = window.confirm("Clear all saved fonts? This cannot be undone.");
+      const confirmed = await showConfirmDialog({
+        title: "Clear saved fonts?",
+        message: "This will remove every saved font.",
+        confirmLabel: "Clear",
+        iconSrc: "../icons/Clear.svg",
+        variant: "clear"
+      });
       if (!confirmed) {
         return;
       }
@@ -247,6 +258,85 @@
     });
 
     return button;
+  }
+
+  function showConfirmDialog({ title, message, confirmLabel = "Confirm", iconSrc = "../icons/Delete.svg", variant = "danger" }) {
+    if (confirmDialog) {
+      confirmDialog.remove();
+      confirmDialog = null;
+    }
+
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = `${namespace}__confirm-overlay`;
+
+      const dialog = document.createElement("section");
+      dialog.className = `${namespace}__confirm-dialog`;
+      dialog.classList.add(`${namespace}__confirm-dialog--${variant}`);
+      dialog.setAttribute("role", "dialog");
+      dialog.setAttribute("aria-modal", "true");
+
+      const iconWrap = document.createElement("div");
+      iconWrap.className = `${namespace}__confirm-icon-wrap`;
+
+      const icon = document.createElement("img");
+      icon.className = `${namespace}__confirm-icon`;
+      icon.src = iconSrc;
+      icon.alt = "";
+      icon.draggable = false;
+      icon.setAttribute("aria-hidden", "true");
+
+      iconWrap.append(icon);
+
+      const heading = document.createElement("h2");
+      heading.textContent = title;
+
+      const body = document.createElement("p");
+      body.textContent = message;
+
+      const actions = document.createElement("div");
+      actions.className = `${namespace}__confirm-actions`;
+
+      const cancelButton = document.createElement("button");
+      cancelButton.type = "button";
+      cancelButton.className = `${namespace}__confirm-cancel`;
+      cancelButton.textContent = "Cancel";
+
+      const confirmButton = document.createElement("button");
+      confirmButton.type = "button";
+      confirmButton.className = `${namespace}__confirm-accept`;
+      confirmButton.textContent = confirmLabel;
+
+      const handleKeydown = (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          close(false);
+        }
+      };
+
+      const close = (confirmed) => {
+        document.removeEventListener("keydown", handleKeydown, true);
+        overlay.remove();
+        confirmDialog = null;
+        resolve(confirmed);
+      };
+
+      cancelButton.addEventListener("click", () => close(false));
+      confirmButton.addEventListener("click", () => close(true));
+      overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) {
+          close(false);
+        }
+      });
+
+      document.addEventListener("keydown", handleKeydown, true);
+      actions.append(cancelButton, confirmButton);
+      dialog.append(iconWrap, heading, body, actions);
+      overlay.append(dialog);
+      document.body.append(overlay);
+      confirmDialog = overlay;
+      confirmButton.focus();
+    });
   }
 
   function createHeaderDivider() {
@@ -425,17 +515,19 @@
 
     titleRow.append(title);
 
-    if (savedFont.elementName) {
-      const badge = document.createElement("span");
-      badge.className = `${namespace}__tag-badge`;
-      badge.textContent = savedFont.elementName;
-      titleRow.append(badge);
-    }
+    const fontName = document.createElement("p");
+    fontName.className = `${namespace}__font-name`;
+    fontName.textContent = getSavedFontFamilyName(savedFont);
 
     const meta = document.createElement("p");
+    meta.className = `${namespace}__card-meta`;
     meta.textContent = getSavedFontMeta(savedFont);
 
-    titleWrap.append(titleRow, meta);
+    titleWrap.append(titleRow, fontName);
+
+    if (meta.textContent) {
+      titleWrap.append(meta);
+    }
 
     const actions = document.createElement("div");
     actions.className = `${namespace}__card-actions`;
@@ -454,16 +546,6 @@
   function createSavedFontSummary(savedFont) {
     const summary = document.createElement("div");
     summary.className = `${namespace}__summary`;
-
-    if (savedFont.sampleText) {
-      const preview = document.createElement("p");
-      preview.className = `${namespace}__summary-sample`;
-      preview.textContent = savedFont.sampleText;
-      if (savedFont.typography?.fontFamily) {
-        preview.style.fontFamily = savedFont.typography.fontFamily;
-      }
-      summary.append(preview);
-    }
 
     const facts = document.createElement("div");
     facts.className = `${namespace}__summary-facts`;
@@ -495,10 +577,6 @@
   function getSavedFontMeta(savedFont) {
     const parts = [];
 
-    if (savedFont.typography?.fontFamily) {
-      parts.push(savedFont.typography.fontFamily.split(",")[0]);
-    }
-
     if (savedFont.source) {
       const source = getSourceLabel(savedFont.source);
       if (source) parts.push(source);
@@ -509,6 +587,13 @@
     }
 
     return parts.join(" / ");
+  }
+
+  function getSavedFontFamilyName(savedFont) {
+    return (savedFont.typography?.fontFamily || "Unknown font")
+      .split(",")[0]
+      .replace(/^["']|["']$/g, "")
+      .trim() || "Unknown font";
   }
 
   function getSourceLabel(source) {
@@ -562,6 +647,17 @@
     button.addEventListener("click", async (event) => {
       event.stopPropagation();
       playButtonPress(button);
+
+      const confirmed = await showConfirmDialog({
+        title: "Delete saved font?",
+        message: "This will remove this font from your saved list.",
+        confirmLabel: "Delete",
+        iconSrc: "../icons/Delete.svg"
+      });
+      if (!confirmed) {
+        return;
+      }
+
       await deleteSavedFont(id);
       showToast("Font deleted");
     });
